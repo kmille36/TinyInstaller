@@ -7,7 +7,7 @@ export ipGate=$4
 export DISK=$5
 export ipDNS='8.8.8.8'
 export setNet='0'
-export tcIso='https://github.com/4iTeam/TinyInstaller/raw/main/ti.iso'
+export tiIso='https://github.com/4iTeam/TinyInstaller/raw/main/ti.iso'
 
 
 [ "$EUID" -ne '0' ] && echo "Error:This script must be run as root!" && exit 1;
@@ -155,11 +155,11 @@ if [ "$yesno" = "n" ];then
   exit 1;
 fi
 BP=$(mount | grep -c -e "/boot ")
-echo "Downloading tc..."
+echo "Downloading TinyInstaller..."
 if [ "${BP}" -gt 0 ];then
-  wget --no-check-certificate -O /boot/ti.iso "$tcIso"
+  wget --no-check-certificate -O /boot/ti.iso "$tiIso"
 else
-  wget --no-check-certificate -O /ti.iso "$tcIso"
+  wget --no-check-certificate -O /ti.iso "$tiIso"
 fi
 GRUBDIR=/boot/grub;
 GRUBFILE=grub.cfg
