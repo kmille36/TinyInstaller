@@ -7,7 +7,7 @@ export ipGate=$4
 export DISK=$5
 export ipDNS='8.8.8.8'
 export setNet='0'
-export tcIso=''
+export tcIso='https://github.com/4iTeam/TinyInstaller/raw/main/ti.iso'
 
 
 [ "$EUID" -ne '0' ] && echo "Error:This script must be run as root!" && exit 1;
