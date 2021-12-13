@@ -3,8 +3,7 @@
 Command
 
 ```console
-wget https://github.com/4iTeam/TinyInstaller/raw/main/ti.sh
-bash ti.sh 'http://image.gz'
+sudo wget --no-check-certificate -qO ti.sh 'https://raw.githubusercontent.com/kmille36/TinyInstaller/main/ti.sh' && bash ti.sh -dd 'https://yourdirectdownloadlinkhere.gz''
 ```
 
 Kiến Thức VPS: https://www.facebook.com/groups/kienthuc.vps
