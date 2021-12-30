@@ -1,5 +1,37 @@
 #!/bin/bash
 
+export isDebug="no"
+export isRecovery="no"
+export verbose=""
+export confirm="no"
+POSITIONAL=()
+while [[ $# -ge 1 ]]; do
+  case $1 in
+    -d|--debug)
+      shift
+      isDebug="yes"
+      ;;
+	  -r|--recovery)
+	    shift
+	    isRecovery="yes"
+	    ;;
+	  -y|--yes)
+      shift
+      confirm="yes"
+      ;;
+	  -v|--verbose)
+        shift
+        verbose="yes"
+        ;;
+    *)
+      POSITIONAL+=("$1")
+      shift;
+      ;;
+    esac
+  done
+
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
 export DDURL=$1
 export ipAddr=$2
 export ipMask=$3
@@ -7,8 +39,8 @@ export ipGate=$4
 export DISK=$5
 export ipDNS='8.8.8.8'
 export setNet='0'
-export tiIso='https://raw.githubusercontent.com/kmille36/TinyInstaller/main/ti.iso'
-
+export tiIso='https://github.com/4iTeam/TinyInstaller/raw/main/ti.iso'
+REBOOT="reboot=1"
 
 [ "$EUID" -ne '0' ] && echo "Error:This script must be run as root!" && exit 1;
 
@@ -126,34 +158,71 @@ fi
   echo -ne '\nError: Invalid disk config\n\n'
   exit 1;
 }
-
-validDD=$(validUrl $DDURL);
-while [ -z $validDD ];
-do
-{
-      echo -n "Enter image URL : ";
-      read DDURL;
-      validDD=$(validUrl $DDURL);
-      [ -z $validDD ] && echo 'Please input vaild URL,Only support http://, ftp:// and https:// !';
-}
-done;
-
+if [ "$isRecovery" = "yes" ];then
+  DDURL=""
+  REBOOT=""
+else
+  validDD=$(validUrl $DDURL);
+  while [ -z $validDD ];
+  do
+  {
+        echo -n "Enter image URL : ";
+        read DDURL;
+        validDD=$(validUrl $DDURL);
+        [ -z $validDD ] && echo 'Please input vaild URL,Only support http://, ftp:// and https:// !';
+  }
+  done;
+fi
 clear && echo -e "\n\033[36m# Install\033[0m\n"
 yesno="n"
 echo "Installer will reboot your computer then re-install with using these information";
+if [ "$isDebug" = "yes" ];then
+  REBOOT=""
+fi
+if [ -n "$DDURL" ];then
+  DD=dd=$DISK="\"$DDURL\""
+fi
 
+GRUBDIR=/boot/grub;
+GRUBFILE=grub.cfg
+
+cat >/tmp/grub.new <<EndOfMessage
+menuentry "TinyInstaller" {
+  set isofile="/ti.iso"
+  loopback loop \$isofile
+  linux (loop)/boot/vmlinuz noswap ip=$IPv4:$MASK:$GATE $DD $REBOOT
+  initrd (loop)/boot/core.gz
+}
+EndOfMessage
+
+if [ ! -f $GRUBDIR/$GRUBFILE ];then
+  echo "Grub config not found $GRUBDIR/$GRUBFILE"
+  exit 2
+fi
 echo "";
 echo "Image Url:  $DDURL";
 echo "IPv4: $IPv4";
 echo "MASK: $MASK";
 echo "GATE: $GATE";
 echo "DISK: $DISK";
-echo "";
-echo -n "Start installation? (y,n) : ";
-read yesno;
-if [ "$yesno" = "n" ];then
-  exit 1;
+if [ -n "$verbose" ];then
+  echo "============================================"
+  echo "Debug: $isDebug";
+  echo "Recovery: $isRecovery";
+  echo "Grub entry:"
+  cat /tmp/grub.new
+  echo "============================================"
 fi
+echo "";
+
+if [ "$confirm" = "no" ];then
+  echo -n "Start installation? (y,n) : ";
+  read yesno;
+  if [ "$yesno" != "y" ];then
+    exit 1;
+  fi
+fi
+
 BP=$(mount | grep -c -e "/boot ")
 echo "Downloading TinyInstaller..."
 if [ "${BP}" -gt 0 ];then
@@ -161,17 +230,13 @@ if [ "${BP}" -gt 0 ];then
 else
   wget --no-check-certificate -O /ti.iso "$tiIso"
 fi
-GRUBDIR=/boot/grub;
-GRUBFILE=grub.cfg
 
-cat >/tmp/grub.new <<EndOfMessage
-menuentry "Install from dd" {
-  set isofile="/ti.iso"
-  loopback loop \$isofile
-  linux (loop)/boot/vmlinuz noswap dd=$DISK="$DDURL" ip=$IPv4:$MASK:$GATE reboot=1
-  initrd (loop)/boot/core.gz
-}
-EndOfMessage
+if [ ! -f /boot/ti.iso ] && [ ! -f /ti.iso ];then
+  echo "Failed to download iso from $tiIso"
+  exit 1;
+fi
+
+
 sed -i '$a\\n' /tmp/grub.new;
 INSERTGRUB="$(awk '/menuentry /{print NR}' $GRUBDIR/$GRUBFILE|head -n 1)"
 sed -i ''${INSERTGRUB}'i\\n' $GRUBDIR/$GRUBFILE;
