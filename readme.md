@@ -1,6 +1,6 @@
 # Tiny installer
 
-Command
+Command Setup
 
 ```console
 sudo wget --no-check-certificate -qO ti.sh 'https://raw.githubusercontent.com/kmille36/TinyInstaller/main/ti.sh' && bash ti.sh 'https://yourdirectdownloadlinkhere.gz'
