@@ -39,10 +39,13 @@ export ipGate=$4
 export DISK=$5
 export ipDNS='8.8.8.8'
 export setNet='0'
-export tiIso='https://github.com/4iTeam/TinyInstaller/raw/main/ti.iso'
+export tiIso='https://ti.4it.top/installer/free.iso'
 REBOOT="reboot=1"
 
-[ "$EUID" -ne '0' ] && echo "Error:This script must be run as root!" && exit 1;
+if [ "$(id -u)" != "0" ]; then
+	echo "You must be root to execute the script. Exiting."
+	exit 1
+fi
 
 
 
@@ -103,7 +106,10 @@ getInterface(){
 }
 
 getDisk(){
-  echo $(mount | grep "/ "  | cut -d' ' -f1 | sed -r 's/[0-9]+$//');
+  disks=`lsblk | sed 's/[[:space:]]*$//g' |grep "disk$" |cut -d' ' -f1 |grep -v "fd[0-9]*\|sr[0-9]*" |head -n1`
+  [ -n "$disks" ] || echo ""
+  echo "$disks" |grep -q "/dev"
+  [ $? -eq 0 ] && echo "$disks" || echo "/dev/$disks"
 }
 
 getGrub(){
@@ -196,7 +202,7 @@ menuentry "TinyInstaller" {
 EndOfMessage
 
 if [ ! -f $GRUBDIR/$GRUBFILE ];then
-  echo "Grub config not found $GRUBDIR/$GRUBFILE"
+  echo "Grub config not found $GRUBDIR/$GRUBFILE. TinyInstaller only run on Debian or Ubuntu!"
   exit 2
 fi
 echo "";
