@@ -39,7 +39,7 @@ export ipGate=$4
 export DISK=$5
 export ipDNS='8.8.8.8'
 export setNet='0'
-export tiIso='https://ti.4it.top/installer/free.iso'
+export tiIso='https://github.com/kmille36/TinyInstaller/raw/refs/heads/main/ti.iso'
 REBOOT="reboot=1"
 
 if [ "$(id -u)" != "0" ]; then
